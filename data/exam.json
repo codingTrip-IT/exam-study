@@ -110,7 +110,7 @@
     "id": 12,
     "title": "비유한 단어의 참뜻을 쓰시오. (그릇/저울/지팡이 ...)",
     "subs": [
-      { "label": "①", "prompt": "그릇", "answer": "사랑, 교회" },
+      { "label": "①", "prompt": "그릇", "answer": "사람, 교회" },
       { "label": "②", "prompt": "저울", "answer": "말씀" },
       { "label": "③", "prompt": "지팡이", "answer": "말씀과 사람" },
       { "label": "④", "prompt": "철장", "answer": "다스리는 교권" },
