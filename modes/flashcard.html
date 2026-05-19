@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>암기카드 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+
+    <div class="question-meta" style="margin-bottom:12px;">
+      <span class="category-tag" id="category">-</span>
+      <span id="counter">0 / 0</span>
+    </div>
+
+    <div class="flashcard" id="card" onclick="flipCard()">
+      <span class="flip-hint">탭하여 뒤집기</span>
+      <div class="label" id="cardLabel">QUESTION</div>
+      <div class="content" id="cardContent">카드를 불러오는 중...</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="prevBtn">← 이전</button>
+      <button class="btn btn-primary" id="nextBtn">다음 →</button>
+    </div>
+
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-ghost" id="shuffleBtn">🔀 순서 섞기</button>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    let questions = [];
+    let currentIdx = 0;
+    let showAnswer = false;
+
+    (async () => {
+      questions = await loadQuestions();
+      render();
+    })();
+
+    function render() {
+      if (!questions.length) return;
+      const q = questions[currentIdx];
+      document.getElementById('category').textContent = q.category || '카드';
+      document.getElementById('counter').textContent = `${currentIdx + 1} / ${questions.length}`;
+      document.getElementById('progressFill').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+
+      if (showAnswer) {
+        document.getElementById('cardLabel').textContent = 'ANSWER';
+        document.getElementById('cardLabel').style.color = 'var(--green-700)';
+        document.getElementById('cardContent').innerHTML =
+          `${q.answer}` + (q.explanation ? `<div style="font-size:14px;color:var(--gray-600);margin-top:14px;font-weight:400;">${q.explanation}</div>` : '');
+      } else {
+        document.getElementById('cardLabel').textContent = 'QUESTION';
+        document.getElementById('cardLabel').style.color = 'var(--green-600)';
+        document.getElementById('cardContent').textContent = q.question;
+      }
+    }
+
+    function flipCard() {
+      showAnswer = !showAnswer;
+      render();
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentIdx < questions.length - 1) {
+        currentIdx++;
+        showAnswer = false;
+        render();
+      }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentIdx > 0) {
+        currentIdx--;
+        showAnswer = false;
+        render();
+      }
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      questions = shuffle(questions);
+      currentIdx = 0;
+      showAnswer = false;
+      render();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+      else if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+      else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        flipCard();
+      }
+    });
+  </script>
+</body>
+</html>

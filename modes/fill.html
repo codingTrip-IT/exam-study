@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>빈칸 채우기 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <div id="quizArea">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-meta">
+          <span class="category-tag" id="category">-</span>
+          <span id="counter">0 / 0</span>
+        </div>
+        <div class="question-text" id="questionText">문제를 불러오는 중...</div>
+        <input type="text" class="fill-input" id="fillInput" placeholder="정답을 입력하세요" autocomplete="off" />
+        <div id="feedback"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="checkBtn">확인</button>
+        <button class="btn btn-primary" id="nextBtn" disabled>다음 문제</button>
+      </div>
+    </div>
+
+    <div id="resultArea" style="display:none;">
+      <div id="resultCapture">
+        <div class="result-summary">
+          <div class="score-big" id="scoreBig">0</div>
+          <div class="score-label" id="scoreLabel">점</div>
+          <p style="margin-top:16px;color:var(--gray-600);" id="scoreText"></p>
+        </div>
+        <div class="result-list" id="resultList"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadResultPDF('resultCapture', '빈칸채우기_결과.pdf')">📄 PDF 저장</button>
+        <button class="btn btn-secondary" onclick="downloadResultImage('resultCapture', '빈칸채우기_결과.png')">🖼️ 이미지 저장</button>
+        <a href="fill.html" class="btn btn-ghost">다시 풀기</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../app.js"></script>
+  <script>
+    let questions = [];
+    let currentIdx = 0;
+    let userAnswers = [];
+    let answered = false;
+
+    (async () => {
+      questions = shuffle(await loadQuestions());
+      renderQuestion();
+    })();
+
+    function renderQuestion() {
+      if (currentIdx >= questions.length) return showResult();
+      const q = questions[currentIdx];
+      document.getElementById('category').textContent = q.category || '문제';
+      document.getElementById('counter').textContent = `${currentIdx + 1} / ${questions.length}`;
+      document.getElementById('questionText').innerHTML =
+        (q.fillText || q.question).replace(/_{2,}/g, '<span style="color:var(--green-600);font-weight:700;">_____</span>');
+      document.getElementById('progressFill').style.width = `${(currentIdx / questions.length) * 100}%`;
+      document.getElementById('feedback').innerHTML = '';
+      const input = document.getElementById('fillInput');
+      input.value = '';
+      input.disabled = false;
+      input.focus();
+      document.getElementById('checkBtn').disabled = false;
+      document.getElementById('nextBtn').disabled = true;
+      answered = false;
+    }
+
+    function checkAnswer() {
+      if (answered) return;
+      const q = questions[currentIdx];
+      const userInput = document.getElementById('fillInput').value;
+      const isCorrect = fuzzyMatch(userInput, q.answer);
+      answered = true;
+
+      userAnswers.push({ id: q.id, question: q.fillText || q.question, userAnswer: userInput || '(공란)', correctAnswer: q.answer, isCorrect, explanation: q.explanation });
+
+      document.getElementById('fillInput').disabled = true;
+      document.getElementById('checkBtn').disabled = true;
+      document.getElementById('nextBtn').disabled = false;
+
+      document.getElementById('feedback').innerHTML = `
+        <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+          <div class="answer-label">${isCorrect ? '✓ 정답입니다!' : '✗ 오답'}</div>
+          정답: ${q.answer}
+          ${q.explanation ? `<div style="margin-top:6px;font-size:13px;opacity:0.85;">${q.explanation}</div>` : ''}
+        </div>`;
+    }
+
+    document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+    document.getElementById('fillInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (answered) document.getElementById('nextBtn').click();
+        else checkAnswer();
+      }
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentIdx++;
+      renderQuestion();
+    });
+
+    function showResult() {
+      document.getElementById('quizArea').style.display = 'none';
+      document.getElementById('resultArea').style.display = 'block';
+
+      const correct = userAnswers.filter(a => a.isCorrect).length;
+      const total = userAnswers.length;
+      const percent = Math.round((correct / total) * 100);
+      saveAttempt(percent);
+
+      document.getElementById('scoreBig').textContent = `${correct} / ${total}`;
+      document.getElementById('scoreLabel').textContent = `정답률 ${percent}%`;
+      document.getElementById('scoreText').textContent = `${new Date().toLocaleString('ko-KR')} 응시`;
+
+      document.getElementById('resultList').innerHTML = userAnswers.map((a, i) => `
+        <div class="result-item">
+          <div class="q"><span class="mark ${a.isCorrect ? 'o' : 'x'}">${a.isCorrect ? 'O' : 'X'}</span>${i + 1}. ${a.question}</div>
+          <div class="a">내 답: ${a.userAnswer} ${a.isCorrect ? '' : `／ 정답: <b>${a.correctAnswer}</b>`}</div>
+          ${a.explanation ? `<div class="a" style="margin-top:4px;color:var(--gray-400);">${a.explanation}</div>` : ''}
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

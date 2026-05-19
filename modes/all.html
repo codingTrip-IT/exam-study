@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전체 학습 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <header style="margin-bottom:16px;">
+      <h1 style="font-size:22px;color:var(--green-700);">📚 전체 학습</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">
+        모든 문제와 정답을 한 화면에서 훑어보며 학습하세요.
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <button class="btn btn-secondary" id="toggleAll">정답 모두 가리기</button>
+      <button class="btn btn-ghost" id="printBtn">📄 PDF로 저장</button>
+    </div>
+
+    <div id="allArea">불러오는 중...</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../app.js"></script>
+  <script>
+    let exam = [];
+    let allHidden = false;
+
+    (async () => {
+      exam = await loadExam();
+      render();
+    })();
+
+    function render() {
+      document.getElementById('allArea').innerHTML = exam.map(q => `
+        <div class="study-block">
+          <div class="study-title">
+            <span class="exam-q-number">${q.id}</span>${q.title}
+          </div>
+          ${q.subs.map(s => `
+            <div class="study-sub">
+              <span class="sub-label">${s.label}</span>
+              <span class="prompt">${s.prompt}</span>
+              <span class="answer ${allHidden ? 'hidden' : ''}" onclick="this.classList.toggle('hidden')">${s.answer}</span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+      document.getElementById('toggleAll').textContent = allHidden ? '정답 모두 보이기' : '정답 모두 가리기';
+    }
+
+    document.getElementById('toggleAll').addEventListener('click', () => {
+      allHidden = !allHidden;
+      render();
+    });
+
+    document.getElementById('printBtn').addEventListener('click', async () => {
+      // PDF 저장 시에는 정답 모두 표시
+      const wasHidden = allHidden;
+      allHidden = false;
+      render();
+      await new Promise(r => setTimeout(r, 100));
+      await html2pdf().set({
+        margin: 10,
+        filename: `전체학습_${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }).from(document.getElementById('allArea')).save();
+      allHidden = wasHidden;
+      render();
+    });
+  </script>
+</body>
+</html>

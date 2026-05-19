@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문제별 학습 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <header style="margin-bottom:16px;">
+      <h1 style="font-size:22px;color:var(--green-700);">✏️ 문제별 학습</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">
+        한 문제씩 골라서 ①②③ 답을 입력하며 연습하세요.
+      </p>
+    </header>
+
+    <div class="question-selector" id="qSelector"></div>
+
+    <div id="studyArea"></div>
+
+    <div class="btn-row" id="actionBar" style="display:none;">
+      <button class="btn btn-primary" id="checkBtn">채점하기</button>
+      <button class="btn btn-secondary" id="revealBtn">정답 보기</button>
+      <button class="btn btn-ghost" id="resetBtn">다시 풀기</button>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    let exam = [];
+    let currentQId = null;
+
+    (async () => {
+      exam = await loadExam();
+      renderSelector();
+      const last = localStorage.getItem('study_last');
+      selectQuestion(last ? parseInt(last) : exam[0].id);
+    })();
+
+    function renderSelector() {
+      document.getElementById('qSelector').innerHTML = exam.map(q =>
+        `<a class="q-chip" data-id="${q.id}" onclick="selectQuestion(${q.id})">${q.id}번</a>`
+      ).join('');
+    }
+
+    function selectQuestion(id) {
+      currentQId = id;
+      localStorage.setItem('study_last', id);
+      document.querySelectorAll('.q-chip').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.id) === id);
+      });
+      const q = exam.find(e => e.id === id);
+      if (!q) return;
+
+      document.getElementById('studyArea').innerHTML = `
+        <div class="exam-question-block">
+          <div class="exam-q-title">
+            <span class="exam-q-number">${q.id}</span>${q.title}
+          </div>
+          ${q.subs.map((s, i) => `
+            <div class="sub-row">
+              <span class="sub-label">${s.label}</span>
+              <span class="sub-prompt">${s.prompt}</span>
+              <input type="text" class="sub-input" data-idx="${i}" autocomplete="off" placeholder="답 입력" />
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('actionBar').style.display = 'flex';
+
+      const inputs = document.querySelectorAll('.sub-input');
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const next = inputs[idx + 1];
+            if (next) next.focus();
+            else document.getElementById('checkBtn').click();
+          }
+        });
+      });
+      if (inputs[0]) inputs[0].focus();
+    }
+
+    document.getElementById('checkBtn').addEventListener('click', () => {
+      const q = exam.find(e => e.id === currentQId);
+      const block = document.querySelector('.exam-question-block');
+      let correct = 0;
+      q.subs.forEach((s, i) => {
+        const inp = block.querySelector(`[data-idx="${i}"]`);
+        const isOk = fuzzyMatch(inp.value, s.answer);
+        inp.classList.remove('correct', 'incorrect');
+        inp.classList.add(isOk ? 'correct' : 'incorrect');
+        if (isOk) correct++;
+
+        const row = inp.parentElement;
+        const old = row.querySelector('.sub-answer-reveal');
+        if (old) old.remove();
+        if (!isOk) {
+          const reveal = document.createElement('div');
+          reveal.className = 'sub-answer-reveal wrong';
+          reveal.textContent = `정답: ${s.answer}`;
+          row.appendChild(reveal);
+        }
+      });
+      const percent = Math.round((correct / q.subs.length) * 100);
+      alert(`${correct} / ${q.subs.length} 정답 (${percent}%)`);
+    });
+
+    document.getElementById('revealBtn').addEventListener('click', () => {
+      const q = exam.find(e => e.id === currentQId);
+      const block = document.querySelector('.exam-question-block');
+      q.subs.forEach((s, i) => {
+        const inp = block.querySelector(`[data-idx="${i}"]`);
+        inp.value = s.answer;
+        inp.classList.remove('incorrect');
+        inp.classList.add('correct');
+      });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      selectQuestion(currentQId);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>최종시험 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <div id="examArea">
+      <header style="margin-bottom:20px;">
+        <h1 style="font-size:24px;color:var(--green-700);">📋 최종시험</h1>
+        <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">
+          모든 문제의 ①②③ 답을 순서대로 입력하세요. 마지막에 일괄 채점합니다.
+        </p>
+      </header>
+
+      <div id="examForm"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="submitBtn">전체 채점하기</button>
+        <button class="btn btn-ghost" id="saveDraftBtn">임시 저장</button>
+      </div>
+    </div>
+
+    <div id="resultArea" style="display:none;">
+      <div id="resultCapture">
+        <div class="result-summary">
+          <div class="score-big" id="scoreBig">0</div>
+          <div class="score-label" id="scoreLabel">정답률</div>
+          <p style="margin-top:16px;color:var(--gray-600);" id="scoreText"></p>
+        </div>
+        <div id="resultDetail"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadResultPDF('resultCapture', '최종시험_결과.pdf')">📄 PDF 저장</button>
+        <button class="btn btn-secondary" onclick="downloadResultImage('resultCapture', '최종시험_결과.png')">🖼️ 이미지 저장</button>
+        <a href="exam.html" class="btn btn-ghost">다시 풀기</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../app.js"></script>
+  <script>
+    let exam = [];
+    const DRAFT_KEY = 'exam_draft';
+
+    (async () => {
+      exam = await loadExam();
+      renderExam();
+      restoreDraft();
+    })();
+
+    function inputId(qid, idx) { return `q${qid}_${idx}`; }
+
+    function renderExam() {
+      const form = document.getElementById('examForm');
+      form.innerHTML = exam.map(q => `
+        <div class="exam-question-block">
+          <div class="exam-q-title">
+            <span class="exam-q-number">${q.id}</span>${q.title}
+          </div>
+          ${q.subs.map((s, i) => `
+            <div class="sub-row">
+              <span class="sub-label">${s.label}</span>
+              <span class="sub-prompt">${s.prompt}</span>
+              <input type="text" class="sub-input" id="${inputId(q.id, i)}" autocomplete="off" placeholder="답 입력" />
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+
+      // Enter 키로 다음 입력칸 이동
+      const inputs = form.querySelectorAll('.sub-input');
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const next = inputs[idx + 1];
+            if (next) next.focus();
+          }
+        });
+      });
+    }
+
+    function collectAnswers() {
+      const result = [];
+      exam.forEach(q => {
+        q.subs.forEach((s, i) => {
+          const val = document.getElementById(inputId(q.id, i)).value;
+          result.push({ qid: q.id, idx: i, value: val });
+        });
+      });
+      return result;
+    }
+
+    document.getElementById('saveDraftBtn').addEventListener('click', () => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(collectAnswers()));
+      alert('임시 저장 완료! 다음에 와도 이어서 풀 수 있어요.');
+    });
+
+    function restoreDraft() {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        data.forEach(d => {
+          const el = document.getElementById(inputId(d.qid, d.idx));
+          if (el) el.value = d.value;
+        });
+      } catch (e) {}
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      if (!confirm('전체 채점하시겠습니까?')) return;
+      grade();
+    });
+
+    function grade() {
+      let total = 0, correct = 0;
+      const details = exam.map(q => {
+        const subResults = q.subs.map((s, i) => {
+          const userInput = document.getElementById(inputId(q.id, i)).value;
+          const isCorrect = fuzzyMatch(userInput, s.answer);
+          total++;
+          if (isCorrect) correct++;
+          return { label: s.label, prompt: s.prompt, userInput: userInput || '(공란)', answer: s.answer, isCorrect };
+        });
+        return { id: q.id, title: q.title, subResults };
+      });
+
+      const percent = Math.round((correct / total) * 100);
+      saveAttempt(percent);
+      localStorage.removeItem(DRAFT_KEY);
+
+      document.getElementById('examArea').style.display = 'none';
+      document.getElementById('resultArea').style.display = 'block';
+      document.getElementById('scoreBig').textContent = `${correct} / ${total}`;
+      document.getElementById('scoreLabel').textContent = `정답률 ${percent}%`;
+      document.getElementById('scoreText').textContent = `${new Date().toLocaleString('ko-KR')} 응시 · 최종시험`;
+
+      document.getElementById('resultDetail').innerHTML = details.map(d => `
+        <div class="exam-question-block">
+          <div class="exam-q-title">
+            <span class="exam-q-number">${d.id}</span>${d.title}
+          </div>
+          ${d.subResults.map(r => `
+            <div class="sub-row" style="flex-wrap:wrap;">
+              <span class="sub-label">${r.label}</span>
+              <span class="sub-prompt">${r.prompt}</span>
+              <span style="flex:1;font-size:14px;">
+                <span class="mark ${r.isCorrect ? 'o' : 'x'}">${r.isCorrect ? 'O' : 'X'}</span>
+                내 답: <b>${r.userInput}</b>
+              </span>
+              ${!r.isCorrect ? `<div class="sub-answer-reveal wrong" style="margin-left:36px;">정답: ${r.answer}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

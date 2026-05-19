@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>큰 단위 암기카드 - 초등시험준비</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    .big-card {
+      background: #3a5a7c;
+      color: white;
+      border-radius: 18px;
+      min-height: 320px;
+      padding: 40px 36px;
+      box-shadow: var(--shadow-lg);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+    .big-card:hover { transform: translateY(-2px); }
+    .big-card .flip-hint {
+      position: absolute; top: 14px; right: 18px;
+      font-size: 12px; opacity: 0.6;
+    }
+    .big-card .q-num {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .big-card .q-title {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.55;
+      margin-bottom: 18px;
+    }
+    .big-card .sub-line {
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 4px 0;
+    }
+    .big-card .sub-line .lab { font-weight: 700; margin-right: 6px; }
+    .big-card .sub-line .pmt {
+      opacity: 0.7;
+      font-size: 14px;
+      margin-right: 6px;
+    }
+    .big-card .answers-hidden .ans {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: transparent;
+      border-radius: 4px;
+      padding: 0 30px;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../index.html" class="back-link">← 메인으로</a>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+
+    <div class="question-meta" style="margin-bottom:12px;">
+      <span class="category-tag" id="counter">0 / 0</span>
+      <button class="btn btn-ghost" id="toggleBtn" style="padding:6px 12px;font-size:13px;">정답 숨기기</button>
+    </div>
+
+    <div class="big-card" id="card" onclick="toggleAnswers()">
+      <span class="flip-hint">탭하여 정답 숨김/표시</span>
+      <div id="cardBody">불러오는 중...</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="prevBtn">← 이전</button>
+      <button class="btn btn-primary" id="nextBtn">다음 →</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-ghost" id="shuffleBtn">🔀 순서 섞기</button>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    let exam = [];
+    let currentIdx = 0;
+    let hideAnswers = false;
+
+    (async () => {
+      exam = await loadExam();
+      render();
+    })();
+
+    function render() {
+      if (!exam.length) return;
+      const q = exam[currentIdx];
+      document.getElementById('counter').textContent = `${currentIdx + 1} / ${exam.length}`;
+      document.getElementById('progressFill').style.width = `${((currentIdx + 1) / exam.length) * 100}%`;
+      document.getElementById('toggleBtn').textContent = hideAnswers ? '정답 보기' : '정답 숨기기';
+
+      const body = document.getElementById('cardBody');
+      body.className = hideAnswers ? 'answers-hidden' : '';
+      body.innerHTML = `
+        <div class="q-num">문제 ${q.id}</div>
+        <div class="q-title">${q.title}</div>
+        ${q.subs.map(s => `
+          <div class="sub-line">
+            <span class="lab">${s.label}</span>
+            <span class="pmt">${s.prompt}:</span>
+            <span class="ans">${s.answer}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function toggleAnswers() {
+      hideAnswers = !hideAnswers;
+      render();
+    }
+
+    document.getElementById('toggleBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleAnswers();
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentIdx < exam.length - 1) { currentIdx++; render(); }
+    });
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentIdx > 0) { currentIdx--; render(); }
+    });
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+      exam = shuffle(exam);
+      currentIdx = 0;
+      render();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+      else if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+      else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAnswers(); }
+    });
+  </script>
+</body>
+</html>
