@@ -90,22 +90,32 @@ function buildChoices(currentQuestion, allQuestions) {
 }
 
 // 결과 PDF / 이미지 저장
-async function downloadResultPDF(elementId, filename) {
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+async function downloadResultPDF(elementId, baseName) {
   const el = document.getElementById(elementId);
   if (!window.html2pdf) {
     alert('PDF 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
     return;
   }
+  const filename = `${baseName || '시험결과'}_${todayStr()}.pdf`;
   await html2pdf().set({
-    margin: 10,
-    filename: filename || `시험결과_${new Date().toISOString().slice(0, 10)}.pdf`,
+    margin: [10, 10, 10, 10],
+    filename,
     image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: el.scrollWidth },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: '.exam-question-block, .result-item, .study-block' },
   }).from(el).save();
 }
 
-async function downloadResultImage(elementId, filename) {
+async function downloadResultImage(elementId, baseName) {
   const el = document.getElementById(elementId);
   if (!window.html2canvas) {
     alert('이미지 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
@@ -113,7 +123,7 @@ async function downloadResultImage(elementId, filename) {
   }
   const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
   const link = document.createElement('a');
-  link.download = filename || `시험결과_${new Date().toISOString().slice(0, 10)}.png`;
+  link.download = `${baseName || '시험결과'}_${todayStr()}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
