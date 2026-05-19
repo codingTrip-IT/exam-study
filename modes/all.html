@@ -66,12 +66,12 @@
       render();
       await new Promise(r => setTimeout(r, 100));
       await html2pdf().set({
-        margin: 10,
-        filename: `전체학습_${new Date().toISOString().slice(0,10)}.pdf`,
+        margin: [10, 10, 10, 10],
+        filename: `전체학습 ${todayStr()}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ['css', 'legacy'], avoid: '.study-block' }
       }).from(document.getElementById('allArea')).save();
       allHidden = wasHidden;
       render();
