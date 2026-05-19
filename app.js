@@ -98,21 +98,13 @@ function todayStr() {
   return `${y}-${m}-${day}`;
 }
 
-async function downloadResultPDF(elementId, baseName) {
-  const el = document.getElementById(elementId);
-  if (!window.html2pdf) {
-    alert('PDF 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
-    return;
-  }
-  const filename = `${baseName || '시험결과'}_${todayStr()}.pdf`;
-  await html2pdf().set({
-    margin: [10, 10, 10, 10],
-    filename,
-    image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: el.scrollWidth },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: '.exam-question-block, .result-item, .study-block' },
-  }).from(el).save();
+function downloadResultPDF(elementId, baseName) {
+  const originalTitle = document.title;
+  document.title = `${baseName || '시험결과'}_${todayStr()}`;
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 500);
+  }, 100);
 }
 
 async function downloadResultImage(elementId, baseName) {
