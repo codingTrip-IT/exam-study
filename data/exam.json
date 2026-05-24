@@ -197,26 +197,13 @@
       { "label": "④", "prompt": "하늘, 땅", "answer": "선민의 장막, 백성 (성도)" },
       { "label": "⑤", "prompt": "해 달. 별", "answer": "목자 . 전도자 . 성도" },
       { "label": "⑥", "prompt": "처음 하늘 처음 땅", "answer": "처음 장막과 처음 성도" },
-      { "label": "⑦", "prompt": "새 하늘 새 땅", "answer": "새 장막과 새 성도" }
-    ]
-  },
-  {
-    "id": 19,
-    "title": "비유한 단어의 참뜻을 쓰시오.",
-    "subs": [
-      { "label": "①", "prompt": "예루살렘", "answer": "선민의 교단" },
-      { "label": "②", "prompt": "바벨른", "answer": "이방 귀신의 교단" },
-      { "label": "③", "prompt": "전쟁", "answer": "교리 싸움" },
-      { "label": "④", "prompt": "하늘, 땅", "answer": "선민의 장막, 백성(성도)" },
-      { "label": "⑤", "prompt": "해·달·별", "answer": "목자·전도자·성도" },
-      { "label": "⑥", "prompt": "처음 하늘 처음 땅", "answer": "처음 장막과 처음 성도" },
-      { "label": "⑦", "prompt": "새 하늘 새 땅", "answer": "새 장막과 새 성도도" },
+      { "label": "⑦", "prompt": "새 하늘 새 땅", "answer": "새 장막과 새 성도" },
       { "label": "⑧", "prompt": "천국 열쇠", "answer": "천국의 비밀을 아는 지혜" },
       { "label": "⑨", "prompt": "지옥 열쇠", "answer": "사단의 비밀을 아는 지혜" }
     ]
   },
   {
-    "id": 20,
+    "id": 19,
     "title": "각 단어가 무엇을 가리키는지 쓰시오.",
     "subs": [
       { "label": "①", "prompt": "이스라엘", "answer": "이긴 자, 선민" },
