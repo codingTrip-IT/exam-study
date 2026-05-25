@@ -15,8 +15,12 @@
 
     <div class="stats-bar" id="statsBar">
       <div class="stat">
-        <div class="stat-value" id="totalQuestions">-</div>
-        <div class="stat-label">총 문제</div>
+        <div class="stat-value" id="totalMain">-</div>
+        <div class="stat-label">대문제</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalSub">-</div>
+        <div class="stat-label">소문제</div>
       </div>
       <div class="stat">
         <div class="stat-value" id="bestScore">-</div>
@@ -74,8 +78,9 @@
   <script src="app.js"></script>
   <script>
     (async () => {
-      const questions = await loadQuestions();
-      document.getElementById('totalQuestions').textContent = questions.length;
+      const [questions, exam] = await Promise.all([loadQuestions(), loadExam()]);
+      document.getElementById('totalMain').textContent = exam.length;
+      document.getElementById('totalSub').textContent = questions.length;
       const stats = getStats();
       document.getElementById('bestScore').textContent =
         stats.bestScore !== null ? `${stats.bestScore}%` : '-';
