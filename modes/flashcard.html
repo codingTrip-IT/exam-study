@@ -10,6 +10,8 @@
   <div class="container">
     <a href="../index.html" class="back-link">← 메인으로</a>
 
+    <div class="question-selector" id="catSelector"></div>
+
     <div class="progress-bar">
       <div class="progress-fill" id="progressFill" style="width: 0%"></div>
     </div>
@@ -37,14 +39,43 @@
 
   <script src="../app.js"></script>
   <script>
+    let allQuestions = [];
     let questions = [];
     let currentIdx = 0;
     let showAnswer = false;
 
     (async () => {
-      questions = await loadQuestions();
+      allQuestions = await loadQuestions();
+      questions = [...allQuestions];
+      renderSelector();
       render();
     })();
+
+    function renderSelector() {
+      const cats = ['전체', ...new Set(allQuestions.map(q => q.category))];
+      const sel = document.getElementById('catSelector');
+      sel.innerHTML = cats.map((c, i) => {
+        const label = c === '전체' ? '전체' : shortLabel(c);
+        return `<a class="q-chip ${i === 0 ? 'active' : ''}" data-cat="${c}" onclick="filterCat('${c.replace(/'/g, "\\'")}')">${label}</a>`;
+      }).join('');
+    }
+
+    function shortLabel(cat) {
+      // "비유 - 11번 (씨/밭/나무/새)" → "11번"
+      const m = cat.match(/(\d+)번/);
+      if (m) return m[0];
+      return cat;
+    }
+
+    function filterCat(cat) {
+      document.querySelectorAll('.q-chip').forEach(c => c.classList.remove('active'));
+      const target = document.querySelector(`.q-chip[data-cat="${cat}"]`);
+      if (target) target.classList.add('active');
+      questions = cat === '전체' ? [...allQuestions] : allQuestions.filter(q => q.category === cat);
+      currentIdx = 0;
+      showAnswer = false;
+      render();
+    }
 
     function render() {
       if (!questions.length) return;

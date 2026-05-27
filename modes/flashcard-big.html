@@ -62,6 +62,8 @@
   <div class="container">
     <a href="../index.html" class="back-link">← 메인으로</a>
 
+    <div class="question-selector" id="qSelector"></div>
+
     <div class="progress-bar">
       <div class="progress-fill" id="progressFill" style="width: 0%"></div>
     </div>
@@ -87,14 +89,39 @@
 
   <script src="../app.js"></script>
   <script>
+    let allExam = [];
     let exam = [];
     let currentIdx = 0;
     let hideAnswers = false;
 
     (async () => {
-      exam = await loadExam();
+      allExam = await loadExam();
+      exam = [...allExam];
+      renderSelector();
       render();
     })();
+
+    function renderSelector() {
+      const sel = document.getElementById('qSelector');
+      let html = `<a class="q-chip active" onclick="filterTo(null)">전체</a>`;
+      allExam.forEach(q => {
+        html += `<a class="q-chip" data-id="${q.id}" onclick="filterTo(${q.id})">${q.id}번</a>`;
+      });
+      sel.innerHTML = html;
+    }
+
+    function filterTo(id) {
+      document.querySelectorAll('.q-chip').forEach(c => c.classList.remove('active'));
+      if (id === null) {
+        exam = [...allExam];
+        document.querySelector('.q-chip').classList.add('active');
+      } else {
+        exam = allExam.filter(q => q.id === id);
+        document.querySelector(`.q-chip[data-id="${id}"]`).classList.add('active');
+      }
+      currentIdx = 0;
+      render();
+    }
 
     function render() {
       if (!exam.length) return;

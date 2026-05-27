@@ -152,7 +152,7 @@
     "subs": [
       { "label": "①", "prompt": "짐승", "answer": "거짓 목자" },
       { "label": "②", "prompt": "머리", "answer": "우두머리 (목자)" },
-      { "label": "③", "prompt": "불", "answer": "머리에 속해서 싸우는 권세자 (장로)" },
+      { "label": "③", "prompt": "뿔", "answer": "머리에 속해서 싸우는 권세자 (장로)" },
       { "label": "④", "prompt": "꼬리", "answer": "거짓 선지자" },
       { "label": "⑤", "prompt": "어린 양의 피와 살", "answer": "예수님의 생명의 말씀" }
     ]
