@@ -1,3 +1,64 @@
+// ===== PIN 잠금 (가벼운 접근 제한) =====
+(function pinGate() {
+  const PIN = '7957';
+  const KEY = 'site_unlocked';
+  if (localStorage.getItem(KEY) === 'yes') return;
+
+  // 콘텐츠 가리기
+  const style = document.createElement('style');
+  style.textContent = 'body > *:not(#pinOverlay){filter:blur(8px) !important;pointer-events:none !important;}';
+  document.documentElement.appendChild(style);
+
+  function buildOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'pinOverlay';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:99999;
+      background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;`;
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:20px;padding:40px 32px;box-shadow:0 10px 40px rgba(22,163,74,0.15);text-align:center;width:90%;max-width:340px;">
+        <div style="font-size:44px;margin-bottom:10px;">🔒</div>
+        <h2 style="color:#15803d;font-size:20px;margin:0 0 6px;">초등시험준비</h2>
+        <p style="color:#4b5563;font-size:14px;margin:0 0 20px;">비밀번호 4자리를 입력하세요</p>
+        <input id="pinInput" type="tel" inputmode="numeric" maxlength="4" placeholder="••••"
+          style="width:100%;text-align:center;font-size:28px;letter-spacing:12px;padding:14px;
+          border:2px solid #bbf7d0;border-radius:12px;outline:none;box-sizing:border-box;font-family:inherit;" />
+        <div id="pinErr" style="color:#ef4444;font-size:13px;height:18px;margin-top:10px;"></div>
+        <button id="pinBtn" style="width:100%;margin-top:8px;padding:14px;background:#16a34a;color:white;
+          border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;">입력</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector('#pinInput');
+    const err = overlay.querySelector('#pinErr');
+    const btn = overlay.querySelector('#pinBtn');
+    input.focus();
+
+    function tryUnlock() {
+      if (input.value === PIN) {
+        localStorage.setItem(KEY, 'yes');
+        overlay.remove();
+        style.remove();
+      } else {
+        err.textContent = '비밀번호가 맞지 않습니다';
+        input.value = '';
+        input.focus();
+      }
+    }
+    btn.addEventListener('click', tryUnlock);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+    input.addEventListener('input', () => {
+      err.textContent = '';
+      if (input.value.length === 4) tryUnlock();
+    });
+  }
+
+  if (document.body) buildOverlay();
+  else document.addEventListener('DOMContentLoaded', buildOverlay);
+})();
+
 // 공통 유틸리티
 
 async function loadQuestions() {
